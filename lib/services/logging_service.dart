@@ -11,7 +11,7 @@ class LoggingService {
 
   void initialize({bool isDebug = false}) {
     if (_logger != null) return; // Already initialized
-    
+
     _logger = Logger(
       level: isDebug ? Level.debug : Level.info,
       printer: PrettyPrinter(
@@ -49,7 +49,12 @@ class LoggingService {
     }
   }
 
-  void logError(String message, {Object? error, StackTrace? stackTrace, Map<String, dynamic>? data}) {
+  void logError(
+    String message, {
+    Object? error,
+    StackTrace? stackTrace,
+    Map<String, dynamic>? data,
+  }) {
     var logMessage = message;
     if (data != null) {
       logMessage += ' | Data: $data';
@@ -61,7 +66,11 @@ class LoggingService {
     logInfo('User Action: $action', data: context);
   }
 
-  void logAuthEvent(String event, {String? userId, Map<String, dynamic>? details}) {
+  void logAuthEvent(
+    String event, {
+    String? userId,
+    Map<String, dynamic>? details,
+  }) {
     final data = <String, dynamic>{
       'event': event,
       if (userId != null) 'userId': userId,
@@ -78,7 +87,12 @@ class LoggingService {
     logInfo('Screen View: $screenName', data: data);
   }
 
-  void logNetworkCall(String method, String url, {int? statusCode, Map<String, dynamic>? data}) {
+  void logNetworkCall(
+    String method,
+    String url, {
+    int? statusCode,
+    Map<String, dynamic>? data,
+  }) {
     final logData = <String, dynamic>{
       'method': method,
       'url': url,

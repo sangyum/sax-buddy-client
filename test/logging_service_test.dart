@@ -28,22 +28,73 @@ void main() {
     });
 
     test('Logging methods should execute without errors', () {
-      expect(() => loggingService.logInfo('Test info message'), returnsNormally);
-      expect(() => loggingService.logDebug('Test debug message'), returnsNormally);
-      expect(() => loggingService.logWarning('Test warning message'), returnsNormally);
-      expect(() => loggingService.logError('Test error message'), returnsNormally);
-      expect(() => loggingService.logUserAction('test_action'), returnsNormally);
-      expect(() => loggingService.logAuthEvent('test_auth_event'), returnsNormally);
+      expect(
+        () => loggingService.logInfo('Test info message'),
+        returnsNormally,
+      );
+      expect(
+        () => loggingService.logDebug('Test debug message'),
+        returnsNormally,
+      );
+      expect(
+        () => loggingService.logWarning('Test warning message'),
+        returnsNormally,
+      );
+      expect(
+        () => loggingService.logError('Test error message'),
+        returnsNormally,
+      );
+      expect(
+        () => loggingService.logUserAction('test_action'),
+        returnsNormally,
+      );
+      expect(
+        () => loggingService.logAuthEvent('test_auth_event'),
+        returnsNormally,
+      );
       expect(() => loggingService.logScreenView('TestScreen'), returnsNormally);
-      expect(() => loggingService.logNetworkCall('GET', 'https://api.example.com'), returnsNormally);
+      expect(
+        () => loggingService.logNetworkCall('GET', 'https://api.example.com'),
+        returnsNormally,
+      );
     });
 
     test('Logging methods should handle data parameters', () {
-      expect(() => loggingService.logInfo('Test message', data: {'key': 'value'}), returnsNormally);
-      expect(() => loggingService.logUserAction('test_action', context: {'screen': 'home'}), returnsNormally);
-      expect(() => loggingService.logAuthEvent('sign_in', userId: 'user123', details: {'method': 'google'}), returnsNormally);
-      expect(() => loggingService.logScreenView('HomeScreen', parameters: {'userId': 'user123'}), returnsNormally);
-      expect(() => loggingService.logNetworkCall('POST', 'https://api.example.com', statusCode: 200, data: {'response': 'ok'}), returnsNormally);
+      expect(
+        () => loggingService.logInfo('Test message', data: {'key': 'value'}),
+        returnsNormally,
+      );
+      expect(
+        () => loggingService.logUserAction(
+          'test_action',
+          context: {'screen': 'home'},
+        ),
+        returnsNormally,
+      );
+      expect(
+        () => loggingService.logAuthEvent(
+          'sign_in',
+          userId: 'user123',
+          details: {'method': 'google'},
+        ),
+        returnsNormally,
+      );
+      expect(
+        () => loggingService.logScreenView(
+          'HomeScreen',
+          parameters: {'userId': 'user123'},
+        ),
+        returnsNormally,
+      );
+      expect(
+        () => loggingService.logNetworkCall(
+          'POST',
+          'https://api.example.com',
+          statusCode: 200,
+          data: {'response': 'ok'},
+        ),
+        returnsNormally,
+      );
     });
   });
 }

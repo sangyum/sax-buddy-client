@@ -22,7 +22,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
   Future<void> _signInWithGoogle() async {
     _logger.logUserAction('tap_google_sign_in_button');
-    
+
     setState(() {
       _isLoading = true;
     });
@@ -30,14 +30,15 @@ class _SignInScreenState extends State<SignInScreen> {
     try {
       final result = await _authService.signInWithGoogle();
       if (result != null) {
-        _logger.logUserAction('sign_in_success', context: {
-          'method': 'google',
-          'userId': result.user?.uid,
-        });
+        _logger.logUserAction(
+          'sign_in_success',
+          context: {'method': 'google', 'userId': result.user?.uid},
+        );
       } else {
-        _logger.logUserAction('sign_in_cancelled', context: {
-          'method': 'google',
-        });
+        _logger.logUserAction(
+          'sign_in_cancelled',
+          context: {'method': 'google'},
+        );
         _showSnackBar('Sign in cancelled');
       }
     } catch (e) {
@@ -51,9 +52,9 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -65,26 +66,16 @@ class _SignInScreenState extends State<SignInScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.music_note,
-                size: 100,
-                color: Colors.blue,
-              ),
+              const Icon(Icons.music_note, size: 100, color: Colors.blue),
               const SizedBox(height: 32),
               const Text(
                 'Welcome to Sax Buddy',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               const Text(
                 'Please sign in to continue',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
               const SizedBox(height: 48),
               SizedBox(
@@ -92,16 +83,16 @@ class _SignInScreenState extends State<SignInScreen> {
                 height: 56,
                 child: ElevatedButton.icon(
                   onPressed: _isLoading ? null : _signInWithGoogle,
-                  icon: _isLoading 
+                  icon: _isLoading
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.login),
-                  label: Text(_isLoading ? 'Signing in...' : 'Sign in with Google'),
+                  label: Text(
+                    _isLoading ? 'Signing in...' : 'Sign in with Google',
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,

@@ -60,7 +60,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '597882776569',
     projectId: 'sax-buddy-ed0de',
     storageBucket: 'sax-buddy-ed0de.firebasestorage.app',
-    iosClientId: '597882776569-mhk14n1n6okuc6a6oitn032hmag5ddgq.apps.googleusercontent.com',
+    iosClientId:
+        '597882776569-mhk14n1n6okuc6a6oitn032hmag5ddgq.apps.googleusercontent.com',
     iosBundleId: 'com.example.saxBuddy',
   );
 
@@ -70,8 +71,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '597882776569',
     projectId: 'sax-buddy-ed0de',
     storageBucket: 'sax-buddy-ed0de.firebasestorage.app',
-    iosClientId: '597882776569-mhk14n1n6okuc6a6oitn032hmag5ddgq.apps.googleusercontent.com',
+    iosClientId:
+        '597882776569-mhk14n1n6okuc6a6oitn032hmag5ddgq.apps.googleusercontent.com',
     iosBundleId: 'com.example.saxBuddy',
   );
-
 }

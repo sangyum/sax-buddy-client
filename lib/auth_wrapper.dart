@@ -30,17 +30,15 @@ class _AuthWrapperState extends State<AuthWrapper> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           _logger.logInfo('Auth state loading');
           return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
-        
+
         if (snapshot.hasData) {
-          _logger.logInfo('User authenticated, showing home screen', data: {
-            'userId': snapshot.data?.uid,
-            'email': snapshot.data?.email,
-          });
+          _logger.logInfo(
+            'User authenticated, showing home screen',
+            data: {'userId': snapshot.data?.uid, 'email': snapshot.data?.email},
+          );
           return const HomeScreen();
         } else {
           _logger.logInfo('User not authenticated, showing sign-in screen');

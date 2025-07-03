@@ -7,16 +7,14 @@ import 'services/logging_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize logging
   LoggingService().initialize(isDebug: kDebugMode);
   LoggingService().logInfo('App starting');
-  
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   LoggingService().logInfo('Firebase initialized');
-  
+
   runApp(const MyApp());
 }
 
@@ -35,4 +33,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
