@@ -7,7 +7,10 @@ class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final LoggingService _logger = LoggingService();
 
+  String? _googleAccessToken;
+
   User? get currentUser => _auth.currentUser;
+  String? get googleAccessToken => _googleAccessToken;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
@@ -32,6 +35,9 @@ class AuthService {
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
+
+      // Store the Google access token for API calls
+      _googleAccessToken = googleAuth.accessToken;
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -76,6 +82,9 @@ class AuthService {
     try {
       await _googleSignIn.signOut();
       await _auth.signOut();
+      
+      // Clear the stored access token
+      _googleAccessToken = null;
 
       _logger.logAuthEvent(
         'sign_out_success',
