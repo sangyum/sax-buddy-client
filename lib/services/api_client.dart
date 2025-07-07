@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/api_models.dart';
@@ -6,28 +8,33 @@ import 'logging_service.dart';
 class ApiClient {
   late Dio _dio;
   final LoggingService _logger = LoggingService();
-  
-  static const String _defaultBaseUrl = 'http://0.0.0.0:8000';
-  
+
+  static const String _defaultBaseUrl = 'http://127.0.0.1:8000';
+
   // Read from .env file with fallback to compile-time environment variable
   static String get _baseUrl {
-    return dotenv.env['SAX_BUDDY_API_BASE_URL'] ?? 
-           const String.fromEnvironment('SAX_BUDDY_API_BASE_URL', defaultValue: _defaultBaseUrl);
+    return dotenv.env['SAX_BUDDY_API_BASE_URL'] ??
+        const String.fromEnvironment(
+          'SAX_BUDDY_API_BASE_URL',
+          defaultValue: _defaultBaseUrl,
+        );
   }
-  
+
   ApiClient({String? baseUrl, Dio? dio}) {
-    _dio = dio ?? Dio(BaseOptions(
-      baseUrl: baseUrl ?? _baseUrl,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    ));
-    
+    _dio =
+        dio ??
+        Dio(
+          BaseOptions(
+            baseUrl: baseUrl ?? _baseUrl,
+            connectTimeout: const Duration(seconds: 30),
+            receiveTimeout: const Duration(seconds: 30),
+            headers: {'Content-Type': 'application/json'},
+          ),
+        );
+
     _setupInterceptors();
   }
-  
+
   void _setupInterceptors() {
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -62,297 +69,317 @@ class ApiClient {
       ),
     );
   }
-  
+
   void setAuthToken(String token) {
     _dio.options.headers['Authorization'] = 'Bearer $token';
   }
-  
+
   void clearAuthToken() {
     _dio.options.headers.remove('Authorization');
   }
-  
+
   // User endpoints
   Future<ApiResponse<User>> createUser(CreateUserRequest request) async {
     try {
-      final response = await _dio.post('/users', data: request.toJson());
+      final response = await _dio.post('/v1/users', data: request.toJson());
       final user = User.fromJson(response.data);
       return ApiResponse.success(user);
     } on DioException catch (e) {
       return ApiResponse.error(_handleDioError(e));
     }
   }
-  
+
   Future<ApiResponse<User>> getUser(String userId) async {
     try {
-      final response = await _dio.get('/users/$userId');
+      final response = await _dio.get('/v1/users/$userId');
       final user = User.fromJson(response.data);
       return ApiResponse.success(user);
     } on DioException catch (e) {
       return ApiResponse.error(_handleDioError(e));
     }
   }
-  
-  Future<ApiResponse<User>> updateUser(String userId, Map<String, dynamic> updates) async {
+
+  // User profile endpoints
+  Future<ApiResponse<UserProfile>> getUserProfile(String userId) async {
     try {
-      final response = await _dio.put('/users/$userId', data: updates);
-      final user = User.fromJson(response.data);
-      return ApiResponse.success(user);
+      final response = await _dio.get('/v1/users/$userId/profile');
+      final profile = UserProfile.fromJson(response.data);
+      return ApiResponse.success(profile);
     } on DioException catch (e) {
       return ApiResponse.error(_handleDioError(e));
     }
   }
-  
-  Future<ApiResponse<void>> deleteUser(String userId) async {
+
+  Future<ApiResponse<UserProfile>> updateUserProfile(
+    String userId,
+    UserProfileUpdate update,
+  ) async {
     try {
-      await _dio.delete('/users/$userId');
-      return ApiResponse.success(null);
+      final response = await _dio.put(
+        '/v1/users/$userId/profile',
+        data: update.toJson(),
+      );
+      final profile = UserProfile.fromJson(response.data);
+      return ApiResponse.success(profile);
     } on DioException catch (e) {
       return ApiResponse.error(_handleDioError(e));
     }
   }
-  
+
+  Future<ApiResponse<UserProgress>> getUserProgress(String userId) async {
+    try {
+      final response = await _dio.get('/v1/users/$userId/progress');
+      final progress = UserProgress.fromJson(response.data);
+      return ApiResponse.success(progress);
+    } on DioException catch (e) {
+      return ApiResponse.error(_handleDioError(e));
+    }
+  }
+
   // Performance endpoints
-  Future<ApiResponse<PerformanceSession>> createPerformanceSession(CreatePerformanceSessionRequest request) async {
+  Future<ApiResponse<PerformanceSession>> createPerformanceSession(
+    PerformanceSessionCreate request,
+  ) async {
     try {
-      final response = await _dio.post('/performance/sessions', data: request.toJson());
+      final response = await _dio.post(
+        '/v1/performance/sessions',
+        data: request.toJson(),
+      );
       final session = PerformanceSession.fromJson(response.data);
       return ApiResponse.success(session);
     } on DioException catch (e) {
       return ApiResponse.error(_handleDioError(e));
     }
   }
-  
-  Future<ApiResponse<PerformanceSession>> getPerformanceSession(String sessionId) async {
+
+  Future<ApiResponse<PerformanceSession>> getPerformanceSession(
+    String sessionId,
+  ) async {
     try {
-      final response = await _dio.get('/performance/sessions/$sessionId');
+      final response = await _dio.get('/v1/performance/sessions/$sessionId');
       final session = PerformanceSession.fromJson(response.data);
       return ApiResponse.success(session);
     } on DioException catch (e) {
       return ApiResponse.error(_handleDioError(e));
     }
   }
-  
-  Future<ApiResponse<List<PerformanceSession>>> getUserPerformanceSessions(String userId) async {
+
+  Future<ApiResponse<PerformanceSession>> updatePerformanceSession(
+    String sessionId,
+    PerformanceSessionUpdate update,
+  ) async {
     try {
-      final response = await _dio.get('/performance/sessions/user/$userId');
-      final sessions = (response.data as List)
-          .map((session) => PerformanceSession.fromJson(session))
-          .toList();
-      return ApiResponse.success(sessions);
-    } on DioException catch (e) {
-      return ApiResponse.error(_handleDioError(e));
-    }
-  }
-  
-  Future<ApiResponse<PerformanceSession>> updatePerformanceSession(String sessionId, Map<String, dynamic> updates) async {
-    try {
-      final response = await _dio.put('/performance/sessions/$sessionId', data: updates);
+      final response = await _dio.patch(
+        '/v1/performance/sessions/$sessionId',
+        data: update.toJson(),
+      );
       final session = PerformanceSession.fromJson(response.data);
       return ApiResponse.success(session);
     } on DioException catch (e) {
       return ApiResponse.error(_handleDioError(e));
     }
   }
-  
-  Future<ApiResponse<String>> uploadPerformanceRecording(String sessionId, String filePath) async {
+
+  Future<ApiResponse<String>> uploadPerformanceRecording(
+    String sessionId,
+    String filePath,
+  ) async {
     try {
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(filePath),
       });
-      
-      final response = await _dio.post('/performance/sessions/$sessionId/recording', data: formData);
-      return ApiResponse.success(response.data['recording_url']);
+
+      final response = await _dio.post(
+        '/v1/performance/sessions/$sessionId/file',
+        data: formData,
+      );
+      return ApiResponse.success(response.data.toString());
     } on DioException catch (e) {
       return ApiResponse.error(_handleDioError(e));
     }
   }
-  
+
+  Future<ApiResponse<List<PerformanceMetrics>>> submitMetrics(
+    String sessionId,
+    List<PerformanceMetricsCreate> metrics,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/v1/performance/sessions/$sessionId/metrics',
+        data: metrics.map((m) => m.toJson()).toList(),
+      );
+      final metricsList = (response.data as List)
+          .map((metric) => PerformanceMetrics.fromJson(metric))
+          .toList();
+      return ApiResponse.success(metricsList);
+    } on DioException catch (e) {
+      return ApiResponse.error(_handleDioError(e));
+    }
+  }
+
+  Future<ApiResponse<List<PerformanceMetrics>>> getSessionMetrics(
+    String sessionId,
+  ) async {
+    try {
+      final response = await _dio.get(
+        '/v1/performance/sessions/$sessionId/metrics',
+      );
+      final metrics = (response.data as List)
+          .map((metric) => PerformanceMetrics.fromJson(metric))
+          .toList();
+      return ApiResponse.success(metrics);
+    } on DioException catch (e) {
+      return ApiResponse.error(_handleDioError(e));
+    }
+  }
+
   // Exercise endpoints
-  Future<ApiResponse<PaginatedResponse<Exercise>>> getExercises({
-    int page = 1,
-    int pageSize = 20,
-    String? difficulty,
-    String? category,
+  Future<ApiResponse<List<Exercise>>> getExercises({
+    ExerciseType? exerciseType,
+    DifficultyLevel? difficultyLevel,
+    int limit = 20,
   }) async {
     try {
-      final queryParams = {
-        'page': page,
-        'page_size': pageSize,
-        if (difficulty != null) 'difficulty': difficulty,
-        if (category != null) 'category': category,
-      };
-      
-      final response = await _dio.get('/exercises', queryParameters: queryParams);
-      final paginatedResponse = PaginatedResponse.fromJson(
-        response.data,
-        (json) => Exercise.fromJson(json),
+      final queryParams = <String, dynamic>{'limit': limit};
+      if (exerciseType != null) {
+        queryParams['exercise_type'] = exerciseType.value;
+      }
+      if (difficultyLevel != null) {
+        queryParams['difficulty_level'] = difficultyLevel.value;
+      }
+
+      final response = await _dio.get(
+        '/v1/exercises',
+        queryParameters: queryParams,
       );
-      return ApiResponse.success(paginatedResponse);
+      final exercises = (response.data as List)
+          .map((exercise) => Exercise.fromJson(exercise))
+          .toList();
+      return ApiResponse.success(exercises);
     } on DioException catch (e) {
       return ApiResponse.error(_handleDioError(e));
     }
   }
-  
+
   Future<ApiResponse<Exercise>> getExercise(String exerciseId) async {
     try {
-      final response = await _dio.get('/exercises/$exerciseId');
+      final response = await _dio.get('/v1/exercises/$exerciseId');
       final exercise = Exercise.fromJson(response.data);
       return ApiResponse.success(exercise);
     } on DioException catch (e) {
       return ApiResponse.error(_handleDioError(e));
     }
   }
-  
-  // Lesson endpoints
-  Future<ApiResponse<PaginatedResponse<Lesson>>> getLessons({
-    int page = 1,
-    int pageSize = 20,
-    String? category,
-  }) async {
-    try {
-      final queryParams = {
-        'page': page,
-        'page_size': pageSize,
-        if (category != null) 'category': category,
-      };
-      
-      final response = await _dio.get('/lessons', queryParameters: queryParams);
-      final paginatedResponse = PaginatedResponse.fromJson(
-        response.data,
-        (json) => Lesson.fromJson(json),
-      );
-      return ApiResponse.success(paginatedResponse);
-    } on DioException catch (e) {
-      return ApiResponse.error(_handleDioError(e));
-    }
-  }
-  
-  Future<ApiResponse<Lesson>> getLesson(String lessonId) async {
-    try {
-      final response = await _dio.get('/lessons/$lessonId');
-      final lesson = Lesson.fromJson(response.data);
-      return ApiResponse.success(lesson);
-    } on DioException catch (e) {
-      return ApiResponse.error(_handleDioError(e));
-    }
-  }
-  
+
   // Lesson plan endpoints
-  Future<ApiResponse<LessonPlan>> generateLessonPlan(String userId, {
-    String? skillLevel,
-    List<String>? goals,
-  }) async {
+  Future<ApiResponse<LessonPlan>> generateLessonPlan(String userId) async {
     try {
-      final data = {
-        'user_id': userId,
-        if (skillLevel != null) 'skill_level': skillLevel,
-        if (goals != null) 'goals': goals,
-      };
-      
-      final response = await _dio.post('/lesson-plans/generate', data: data);
+      final response = await _dio.post('/v1/users/$userId/lesson-plans');
       final lessonPlan = LessonPlan.fromJson(response.data);
       return ApiResponse.success(lessonPlan);
     } on DioException catch (e) {
       return ApiResponse.error(_handleDioError(e));
     }
   }
-  
-  Future<ApiResponse<PaginatedResponse<LessonPlan>>> getUserLessonPlans(String userId, {
-    int page = 1,
-    int pageSize = 20,
-  }) async {
-    try {
-      final queryParams = {
-        'page': page,
-        'page_size': pageSize,
-      };
-      
-      final response = await _dio.get('/lesson-plans/user/$userId', queryParameters: queryParams);
-      final paginatedResponse = PaginatedResponse.fromJson(
-        response.data,
-        (json) => LessonPlan.fromJson(json),
-      );
-      return ApiResponse.success(paginatedResponse);
-    } on DioException catch (e) {
-      return ApiResponse.error(_handleDioError(e));
-    }
-  }
-  
-  Future<ApiResponse<LessonPlan>> getLessonPlan(String lessonPlanId) async {
-    try {
-      final response = await _dio.get('/lesson-plans/$lessonPlanId');
-      final lessonPlan = LessonPlan.fromJson(response.data);
-      return ApiResponse.success(lessonPlan);
-    } on DioException catch (e) {
-      return ApiResponse.error(_handleDioError(e));
-    }
-  }
-  
+
   // Assessment endpoints
-  Future<ApiResponse<Assessment>> triggerAssessment(String sessionId) async {
+  Future<ApiResponse<List<FormalAssessment>>> getUserAssessments(
+    String userId, {
+    int limit = 10,
+  }) async {
     try {
-      final response = await _dio.post('/assessments/trigger', data: {'session_id': sessionId});
-      final assessment = Assessment.fromJson(response.data);
-      return ApiResponse.success(assessment);
-    } on DioException catch (e) {
-      return ApiResponse.error(_handleDioError(e));
-    }
-  }
-  
-  Future<ApiResponse<List<Assessment>>> getUserAssessments(String userId) async {
-    try {
-      final response = await _dio.get('/assessments/user/$userId');
+      final response = await _dio.get(
+        '/v1/users/$userId/assessments',
+        queryParameters: {'limit': limit},
+      );
       final assessments = (response.data as List)
-          .map((assessment) => Assessment.fromJson(assessment))
+          .map((assessment) => FormalAssessment.fromJson(assessment))
           .toList();
       return ApiResponse.success(assessments);
     } on DioException catch (e) {
       return ApiResponse.error(_handleDioError(e));
     }
   }
-  
-  Future<ApiResponse<String>> getSessionFeedback(String sessionId) async {
+
+  Future<ApiResponse<FormalAssessment>> triggerAssessment(
+    String userId,
+    AssessmentTrigger trigger,
+  ) async {
     try {
-      final response = await _dio.get('/assessments/feedback/$sessionId');
-      return ApiResponse.success(response.data['feedback']);
+      final response = await _dio.post(
+        '/v1/users/$userId/assessments',
+        data: trigger.toJson(),
+      );
+      final assessment = FormalAssessment.fromJson(response.data);
+      return ApiResponse.success(assessment);
     } on DioException catch (e) {
       return ApiResponse.error(_handleDioError(e));
     }
   }
-  
-  // Reference endpoints
-  Future<ApiResponse<List<SkillLevel>>> getSkillLevels() async {
+
+  Future<ApiResponse<Feedback>> getSessionFeedback(String sessionId) async {
     try {
-      final response = await _dio.get('/reference/skill-levels');
+      final response = await _dio.get(
+        '/v1/performance/sessions/$sessionId/feedback',
+      );
+      final feedback = Feedback.fromJson(response.data);
+      return ApiResponse.success(feedback);
+    } on DioException catch (e) {
+      return ApiResponse.error(_handleDioError(e));
+    }
+  }
+
+  Future<ApiResponse<SkillMetrics>> getUserSkillMetrics(
+    String userId, {
+    int periodDays = 30,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/v1/users/$userId/skill-metrics',
+        queryParameters: {'period_days': periodDays},
+      );
+      final metrics = SkillMetrics.fromJson(response.data);
+      return ApiResponse.success(metrics);
+    } on DioException catch (e) {
+      return ApiResponse.error(_handleDioError(e));
+    }
+  }
+
+  // Reference endpoints
+  Future<ApiResponse<List<SkillLevelDefinition>>> getSkillLevelDefinitions() async {
+    try {
+      final response = await _dio.get('/v1/reference/skill-levels');
       final skillLevels = (response.data as List)
-          .map((skillLevel) => SkillLevel.fromJson(skillLevel))
+          .map((skillLevel) => SkillLevelDefinition.fromJson(skillLevel))
           .toList();
       return ApiResponse.success(skillLevels);
     } on DioException catch (e) {
       return ApiResponse.error(_handleDioError(e));
     }
   }
-  
-  Future<ApiResponse<List<PerformanceSession>>> getReferencePerformances({
+
+  Future<ApiResponse<List<ReferencePerformance>>> getReferencePerformances({
     String? exerciseId,
-    String? skillLevel,
+    SkillLevelEnum? skillLevel,
   }) async {
     try {
-      final queryParams = {
-        if (exerciseId != null) 'exercise_id': exerciseId,
-        if (skillLevel != null) 'skill_level': skillLevel,
-      };
-      
-      final response = await _dio.get('/reference/performances', queryParameters: queryParams);
+      final queryParams = <String, dynamic>{};
+      if (exerciseId != null) queryParams['exercise_id'] = exerciseId;
+      if (skillLevel != null) queryParams['skill_level'] = skillLevel.value;
+
+      final response = await _dio.get(
+        '/v1/reference/performances',
+        queryParameters: queryParams,
+      );
       final performances = (response.data as List)
-          .map((performance) => PerformanceSession.fromJson(performance))
+          .map((performance) => ReferencePerformance.fromJson(performance))
           .toList();
       return ApiResponse.success(performances);
     } on DioException catch (e) {
       return ApiResponse.error(_handleDioError(e));
     }
   }
-  
+
   String _handleDioError(DioException e) {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
@@ -364,7 +391,7 @@ class ApiClient {
       case DioExceptionType.badResponse:
         final statusCode = e.response?.statusCode;
         final data = e.response?.data;
-        
+
         if (statusCode == 401) {
           return 'Unauthorized - Please log in again';
         } else if (statusCode == 403) {

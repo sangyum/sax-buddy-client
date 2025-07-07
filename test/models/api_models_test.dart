@@ -2,13 +2,97 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sax_buddy/models/api_models.dart';
 
 void main() {
+  group('Enum Tests', () {
+    test('should handle ExerciseType enum', () {
+      expect(ExerciseType.scales, isNotNull);
+      expect(ExerciseType.arpeggios, isNotNull);
+      expect(ExerciseType.technical, isNotNull);
+      expect(ExerciseType.etudes, isNotNull);
+      expect(ExerciseType.songs, isNotNull);
+      expect(ExerciseType.longTone, isNotNull);
+    });
+
+    test('should handle DifficultyLevel enum', () {
+      expect(DifficultyLevel.beginner, isNotNull);
+      expect(DifficultyLevel.intermediate, isNotNull);
+      expect(DifficultyLevel.advanced, isNotNull);
+    });
+
+    test('should handle SkillLevel enum', () {
+      expect(SkillLevelEnum.beginner, isNotNull);
+      expect(SkillLevelEnum.intermediate, isNotNull);
+      expect(SkillLevelEnum.advanced, isNotNull);
+    });
+
+    test('should handle SessionStatus enum', () {
+      expect(SessionStatus.inProgress, isNotNull);
+      expect(SessionStatus.completed, isNotNull);
+      expect(SessionStatus.paused, isNotNull);
+      expect(SessionStatus.cancelled, isNotNull);
+    });
+  });
+
+  group('UserProfile Model Tests', () {
+    test('should create UserProfile from JSON', () {
+      final json = {
+        'id': 'profile123',
+        'user_id': 'user123',
+        'current_skill_level': 'beginner',
+        'learning_goals': ['Improve tone', 'Learn scales'],
+        'practice_frequency': 'daily',
+        'formal_assessment_interval_days': 30,
+        'preferred_practice_duration_minutes': 45,
+        'created_at': '2023-01-01T00:00:00Z',
+        'updated_at': '2023-01-02T00:00:00Z',
+      };
+
+      final profile = UserProfile.fromJson(json);
+
+      expect(profile.id, 'profile123');
+      expect(profile.userId, 'user123');
+      expect(profile.currentSkillLevel, SkillLevelEnum.beginner);
+      expect(profile.learningGoals, ['Improve tone', 'Learn scales']);
+      expect(profile.practiceFrequency, PracticeFrequency.daily);
+      expect(profile.formalAssessmentIntervalDays, 30);
+      expect(profile.preferredPracticeDurationMinutes, 45);
+    });
+  });
+
+  group('PerformanceMetrics Model Tests', () {
+    test('should create PerformanceMetrics from JSON', () {
+      final json = {
+        'id': 'metrics123',
+        'session_id': 'session123',
+        'timestamp': 15.5,
+        'intonation_score': 85.0,
+        'rhythm_score': 90.0,
+        'articulation_score': 78.0,
+        'dynamics_score': 82.0,
+        'raw_metrics': {'key': 'value'},
+        'created_at': '2023-01-01T00:00:00Z',
+      };
+
+      final metrics = PerformanceMetrics.fromJson(json);
+
+      expect(metrics.id, 'metrics123');
+      expect(metrics.sessionId, 'session123');
+      expect(metrics.timestamp, 15.5);
+      expect(metrics.intonationScore, 85.0);
+      expect(metrics.rhythmScore, 90.0);
+      expect(metrics.articulationScore, 78.0);
+      expect(metrics.dynamicsScore, 82.0);
+      expect(metrics.rawMetrics, {'key': 'value'});
+    });
+  });
+
   group('User Model Tests', () {
     test('should create User from JSON', () {
       final json = {
         'id': 'user123',
         'email': 'test@example.com',
         'name': 'Test User',
-        'skill_level': 'beginner',
+        'is_active': true,
+        'initial_assessment_completed': false,
         'created_at': '2023-01-01T00:00:00Z',
         'updated_at': '2023-01-02T00:00:00Z',
       };
@@ -18,7 +102,8 @@ void main() {
       expect(user.id, 'user123');
       expect(user.email, 'test@example.com');
       expect(user.name, 'Test User');
-      expect(user.skillLevel, 'beginner');
+      expect(user.isActive, true);
+      expect(user.initialAssessmentCompleted, false);
       expect(user.createdAt, DateTime.parse('2023-01-01T00:00:00Z'));
       expect(user.updatedAt, DateTime.parse('2023-01-02T00:00:00Z'));
     });
@@ -27,8 +112,7 @@ void main() {
       final json = {
         'id': 'user123',
         'email': 'test@example.com',
-        'name': null,
-        'skill_level': null,
+        'name': 'Test User',
         'created_at': '2023-01-01T00:00:00Z',
         'updated_at': '2023-01-02T00:00:00Z',
       };
@@ -37,8 +121,9 @@ void main() {
 
       expect(user.id, 'user123');
       expect(user.email, 'test@example.com');
-      expect(user.name, null);
-      expect(user.skillLevel, null);
+      expect(user.name, 'Test User');
+      expect(user.isActive, true);
+      expect(user.initialAssessmentCompleted, false);
     });
 
     test('should convert User to JSON', () {
@@ -46,7 +131,6 @@ void main() {
         id: 'user123',
         email: 'test@example.com',
         name: 'Test User',
-        skillLevel: 'beginner',
         createdAt: DateTime.parse('2023-01-01T00:00:00Z'),
         updatedAt: DateTime.parse('2023-01-02T00:00:00Z'),
       );
@@ -56,7 +140,8 @@ void main() {
       expect(json['id'], 'user123');
       expect(json['email'], 'test@example.com');
       expect(json['name'], 'Test User');
-      expect(json['skill_level'], 'beginner');
+      expect(json['is_active'], true);
+      expect(json['initial_assessment_completed'], false);
       expect(json['created_at'], '2023-01-01T00:00:00.000Z');
       expect(json['updated_at'], '2023-01-02T00:00:00.000Z');
     });
@@ -67,26 +152,24 @@ void main() {
       final request = CreateUserRequest(
         email: 'test@example.com',
         name: 'Test User',
-        skillLevel: 'beginner',
       );
 
       final json = request.toJson();
 
       expect(json['email'], 'test@example.com');
       expect(json['name'], 'Test User');
-      expect(json['skill_level'], 'beginner');
     });
 
     test('should convert CreateUserRequest to JSON with null values', () {
       final request = CreateUserRequest(
         email: 'test@example.com',
+        name: 'Test User',
       );
 
       final json = request.toJson();
 
       expect(json['email'], 'test@example.com');
-      expect(json['name'], null);
-      expect(json['skill_level'], null);
+      expect(json['name'], 'Test User');
     });
   });
 
@@ -143,23 +226,33 @@ void main() {
     test('should create Exercise from JSON', () {
       final json = {
         'id': 'exercise123',
-        'name': 'Scale Practice',
+        'title': 'Scale Practice',
         'description': 'Practice major scales',
-        'difficulty': 'beginner',
-        'category': 'scales',
-        'metadata': {'tempo': 120, 'key': 'C'},
+        'exercise_type': 'scales',
+        'difficulty_level': 'beginner',
+        'estimated_duration_minutes': 15,
+        'instructions': ['Play slowly', 'Focus on intonation'],
+        'reference_audio_url': 'https://example.com/audio.mp3',
+        'sheet_music_url': null,
+        'is_active': true,
         'created_at': '2023-01-01T00:00:00Z',
+        'updated_at': '2023-01-02T00:00:00Z',
       };
 
       final exercise = Exercise.fromJson(json);
 
       expect(exercise.id, 'exercise123');
-      expect(exercise.name, 'Scale Practice');
+      expect(exercise.title, 'Scale Practice');
       expect(exercise.description, 'Practice major scales');
-      expect(exercise.difficulty, 'beginner');
-      expect(exercise.category, 'scales');
-      expect(exercise.metadata, {'tempo': 120, 'key': 'C'});
+      expect(exercise.exerciseType, ExerciseType.scales);
+      expect(exercise.difficultyLevel, DifficultyLevel.beginner);
+      expect(exercise.estimatedDurationMinutes, 15);
+      expect(exercise.instructions, ['Play slowly', 'Focus on intonation']);
+      expect(exercise.referenceAudioUrl, 'https://example.com/audio.mp3');
+      expect(exercise.sheetMusicUrl, null);
+      expect(exercise.isActive, true);
       expect(exercise.createdAt, DateTime.parse('2023-01-01T00:00:00Z'));
+      expect(exercise.updatedAt, DateTime.parse('2023-01-02T00:00:00Z'));
     });
   });
 
@@ -168,6 +261,7 @@ void main() {
       final user = User(
         id: 'user123',
         email: 'test@example.com',
+        name: 'Test User',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -197,12 +291,14 @@ void main() {
           {
             'id': 'user1',
             'email': 'user1@example.com',
+            'name': 'User One',
             'created_at': '2023-01-01T00:00:00Z',
             'updated_at': '2023-01-01T00:00:00Z',
           },
           {
             'id': 'user2',
             'email': 'user2@example.com',
+            'name': 'User Two',
             'created_at': '2023-01-02T00:00:00Z',
             'updated_at': '2023-01-02T00:00:00Z',
           }

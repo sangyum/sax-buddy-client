@@ -28,55 +28,70 @@ class SaxBuddyService {
     return await _apiClient.getUser(currentUser.uid);
   }
 
-  Future<ApiResponse<User>> updateCurrentUser(Map<String, dynamic> updates) async {
+  Future<ApiResponse<UserProfile>> updateCurrentUserProfile(UserProfileUpdate updates) async {
     final currentUser = _authService.currentUser;
     if (currentUser == null) {
       return ApiResponse.error('User not authenticated');
     }
-    return await _apiClient.updateUser(currentUser.uid, updates);
+    return await _apiClient.updateUserProfile(currentUser.uid, updates);
+  }
+
+  Future<ApiResponse<UserProfile>> getCurrentUserProfile() async {
+    final currentUser = _authService.currentUser;
+    if (currentUser == null) {
+      return ApiResponse.error('User not authenticated');
+    }
+    return await _apiClient.getUserProfile(currentUser.uid);
   }
 
   // Performance methods
   Future<ApiResponse<PerformanceSession>> startPerformanceSession(String exerciseId) async {
-    final request = CreatePerformanceSessionRequest(exerciseId: exerciseId);
+    final currentUser = _authService.currentUser;
+    if (currentUser == null) {
+      return ApiResponse.error('User not authenticated');
+    }
+    final request = PerformanceSessionCreate(userId: currentUser.uid, exerciseId: exerciseId);
     return await _apiClient.createPerformanceSession(request);
   }
 
   Future<ApiResponse<PerformanceSession>> endPerformanceSession(
     String sessionId,
-    Map<String, double>? metrics,
+    {int? durationMinutes, String? notes}
   ) async {
-    final updates = <String, dynamic>{
-      'end_time': DateTime.now().toIso8601String(),
-      if (metrics != null) 'metrics': metrics,
-    };
-    return await _apiClient.updatePerformanceSession(sessionId, updates);
+    final update = PerformanceSessionUpdate(
+      status: SessionStatus.completed,
+      endedAt: DateTime.now().toIso8601String(),
+      durationMinutes: durationMinutes,
+      notes: notes,
+    );
+    return await _apiClient.updatePerformanceSession(sessionId, update);
   }
 
   Future<ApiResponse<String>> uploadRecording(String sessionId, String filePath) async {
     return await _apiClient.uploadPerformanceRecording(sessionId, filePath);
   }
 
-  Future<ApiResponse<List<PerformanceSession>>> getUserPerformanceSessions() async {
-    final currentUser = _authService.currentUser;
-    if (currentUser == null) {
-      return ApiResponse.error('User not authenticated');
-    }
-    return await _apiClient.getUserPerformanceSessions(currentUser.uid);
+  Future<ApiResponse<List<PerformanceMetrics>>> submitSessionMetrics(
+    String sessionId,
+    List<PerformanceMetricsCreate> metrics,
+  ) async {
+    return await _apiClient.submitMetrics(sessionId, metrics);
+  }
+
+  Future<ApiResponse<List<PerformanceMetrics>>> getSessionMetrics(String sessionId) async {
+    return await _apiClient.getSessionMetrics(sessionId);
   }
 
   // Exercise methods
-  Future<ApiResponse<PaginatedResponse<Exercise>>> getExercises({
-    int page = 1,
-    int pageSize = 20,
-    String? difficulty,
-    String? category,
+  Future<ApiResponse<List<Exercise>>> getExercises({
+    ExerciseType? exerciseType,
+    DifficultyLevel? difficultyLevel,
+    int limit = 20,
   }) async {
     return await _apiClient.getExercises(
-      page: page,
-      pageSize: pageSize,
-      difficulty: difficulty,
-      category: category,
+      exerciseType: exerciseType,
+      difficultyLevel: difficultyLevel,
+      limit: limit,
     );
   }
 
@@ -84,88 +99,69 @@ class SaxBuddyService {
     return await _apiClient.getExercise(exerciseId);
   }
 
-  // Lesson methods
-  Future<ApiResponse<PaginatedResponse<Lesson>>> getLessons({
-    int page = 1,
-    int pageSize = 20,
-    String? category,
-  }) async {
-    return await _apiClient.getLessons(
-      page: page,
-      pageSize: pageSize,
-      category: category,
-    );
-  }
-
-  Future<ApiResponse<Lesson>> getLesson(String lessonId) async {
-    return await _apiClient.getLesson(lessonId);
-  }
+  // Note: Lesson methods not yet implemented in the new API
 
   // Lesson plan methods
-  Future<ApiResponse<LessonPlan>> generatePersonalizedLessonPlan({
-    String? skillLevel,
-    List<String>? goals,
-  }) async {
+  Future<ApiResponse<LessonPlan>> generatePersonalizedLessonPlan() async {
     final currentUser = _authService.currentUser;
     if (currentUser == null) {
       return ApiResponse.error('User not authenticated');
     }
-    return await _apiClient.generateLessonPlan(
-      currentUser.uid,
-      skillLevel: skillLevel,
-      goals: goals,
-    );
-  }
-
-  Future<ApiResponse<PaginatedResponse<LessonPlan>>> getUserLessonPlans({
-    int page = 1,
-    int pageSize = 20,
-  }) async {
-    final currentUser = _authService.currentUser;
-    if (currentUser == null) {
-      return ApiResponse.error('User not authenticated');
-    }
-    return await _apiClient.getUserLessonPlans(
-      currentUser.uid,
-      page: page,
-      pageSize: pageSize,
-    );
-  }
-
-  Future<ApiResponse<LessonPlan>> getLessonPlan(String lessonPlanId) async {
-    return await _apiClient.getLessonPlan(lessonPlanId);
+    return await _apiClient.generateLessonPlan(currentUser.uid);
   }
 
   // Assessment methods
-  Future<ApiResponse<Assessment>> triggerAssessment(String sessionId) async {
-    return await _apiClient.triggerAssessment(sessionId);
-  }
-
-  Future<ApiResponse<List<Assessment>>> getUserAssessments() async {
+  Future<ApiResponse<FormalAssessment>> triggerAssessment(
+    AssessmentType assessmentType,
+    TriggerReason triggerReason,
+    {String? notes}
+  ) async {
     final currentUser = _authService.currentUser;
     if (currentUser == null) {
       return ApiResponse.error('User not authenticated');
     }
-    return await _apiClient.getUserAssessments(currentUser.uid);
+    final trigger = AssessmentTrigger(
+      userId: currentUser.uid,
+      assessmentType: assessmentType,
+      triggerReason: triggerReason,
+      notes: notes,
+    );
+    return await _apiClient.triggerAssessment(currentUser.uid, trigger);
   }
 
-  Future<ApiResponse<String>> getSessionFeedback(String sessionId) async {
+  Future<ApiResponse<List<FormalAssessment>>> getUserAssessments({int limit = 10}) async {
+    final currentUser = _authService.currentUser;
+    if (currentUser == null) {
+      return ApiResponse.error('User not authenticated');
+    }
+    return await _apiClient.getUserAssessments(currentUser.uid, limit: limit);
+  }
+
+  Future<ApiResponse<Feedback>> getSessionFeedback(String sessionId) async {
     return await _apiClient.getSessionFeedback(sessionId);
   }
 
   // Reference methods
-  Future<ApiResponse<List<SkillLevel>>> getSkillLevels() async {
-    return await _apiClient.getSkillLevels();
+  Future<ApiResponse<List<SkillLevelDefinition>>> getSkillLevelDefinitions() async {
+    return await _apiClient.getSkillLevelDefinitions();
   }
 
-  Future<ApiResponse<List<PerformanceSession>>> getReferencePerformances({
+  Future<ApiResponse<List<ReferencePerformance>>> getReferencePerformances({
     String? exerciseId,
-    String? skillLevel,
+    SkillLevelEnum? skillLevel,
   }) async {
     return await _apiClient.getReferencePerformances(
       exerciseId: exerciseId,
       skillLevel: skillLevel,
     );
+  }
+
+  Future<ApiResponse<SkillMetrics>> getUserSkillMetrics() async {
+    final currentUser = _authService.currentUser;
+    if (currentUser == null) {
+      return ApiResponse.error('User not authenticated');
+    }
+    return await _apiClient.getUserSkillMetrics(currentUser.uid);
   }
 
   // Auth integration

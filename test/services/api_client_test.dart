@@ -47,7 +47,7 @@ void main() {
           'updated_at': '2023-01-01T00:00:00Z',
         };
 
-        when(mockDio.post('/users', data: anyNamed('data')))
+        when(mockDio.post('/v1/users', data: anyNamed('data')))
             .thenAnswer((_) async => Response(
                   data: responseData,
                   statusCode: 201,
@@ -62,14 +62,14 @@ void main() {
         expect(result.data, isA<User>());
         expect(result.data!.id, 'user123');
         expect(result.data!.email, 'test@example.com');
-        verify(mockDio.post('/users', data: request.toJson())).called(1);
+        verify(mockDio.post('/v1/users', data: request.toJson())).called(1);
       });
 
       test('should handle user creation error', () async {
         // Arrange
-        final request = CreateUserRequest(email: 'test@example.com');
+        final request = CreateUserRequest(email: 'test@example.com', name: 'Test User');
         
-        when(mockDio.post('/users', data: anyNamed('data')))
+        when(mockDio.post('/v1/users', data: anyNamed('data')))
             .thenThrow(DioException(
               requestOptions: RequestOptions(path: '/users'),
               response: Response(
@@ -100,7 +100,7 @@ void main() {
           'updated_at': '2023-01-01T00:00:00Z',
         };
 
-        when(mockDio.get('/users/$userId'))
+        when(mockDio.get('/v1/users/$userId'))
             .thenAnswer((_) async => Response(
                   data: responseData,
                   statusCode: 200,
@@ -114,14 +114,14 @@ void main() {
         expect(result.success, true);
         expect(result.data, isA<User>());
         expect(result.data!.id, userId);
-        verify(mockDio.get('/users/$userId')).called(1);
+        verify(mockDio.get('/v1/users/$userId')).called(1);
       });
 
       test('should handle user not found error', () async {
         // Arrange
         const userId = 'nonexistent';
         
-        when(mockDio.get('/users/$userId'))
+        when(mockDio.get('/v1/users/$userId'))
             .thenThrow(DioException(
               requestOptions: RequestOptions(path: '/users/$userId'),
               response: Response(
@@ -170,7 +170,7 @@ void main() {
     group('Error Handling', () {
       test('should handle connection timeout', () async {
         // Arrange
-        when(mockDio.get('/users/test'))
+        when(mockDio.get('/v1/users/test'))
             .thenThrow(DioException(
               requestOptions: RequestOptions(path: '/users/test'),
               type: DioExceptionType.connectionTimeout,
@@ -186,7 +186,7 @@ void main() {
 
       test('should handle connection error', () async {
         // Arrange
-        when(mockDio.get('/users/test'))
+        when(mockDio.get('/v1/users/test'))
             .thenThrow(DioException(
               requestOptions: RequestOptions(path: '/users/test'),
               type: DioExceptionType.connectionError,
@@ -202,7 +202,7 @@ void main() {
 
       test('should handle unauthorized error', () async {
         // Arrange
-        when(mockDio.get('/users/test'))
+        when(mockDio.get('/v1/users/test'))
             .thenThrow(DioException(
               requestOptions: RequestOptions(path: '/users/test'),
               response: Response(
@@ -224,25 +224,24 @@ void main() {
     group('Exercise Endpoints', () {
       test('should get exercises with pagination', () async {
         // Arrange
-        final responseData = {
-          'items': [
-            {
-              'id': 'exercise1',
-              'name': 'Scale Exercise',
-              'description': 'Practice scales',
-              'difficulty': 'beginner',
-              'category': 'scales',
-              'metadata': null,
-              'created_at': '2023-01-01T00:00:00Z',
-            }
-          ],
-          'total': 1,
-          'page': 1,
-          'page_size': 20,
-          'total_pages': 1,
-        };
+        final responseData = [
+          {
+            'id': 'exercise1',
+            'title': 'Scale Exercise',
+            'description': 'Practice scales',
+            'exercise_type': 'scales',
+            'difficulty_level': 'beginner',
+            'estimated_duration_minutes': 30,
+            'instructions': ['Play slowly', 'Focus on intonation'],
+            'reference_audio_url': null,
+            'sheet_music_url': null,
+            'is_active': true,
+            'created_at': '2023-01-01T00:00:00Z',
+            'updated_at': '2023-01-01T00:00:00Z',
+          }
+        ];
 
-        when(mockDio.get('/exercises', queryParameters: anyNamed('queryParameters')))
+        when(mockDio.get('/v1/exercises', queryParameters: anyNamed('queryParameters')))
             .thenAnswer((_) async => Response(
                   data: responseData,
                   statusCode: 200,
@@ -250,16 +249,15 @@ void main() {
                 ));
 
         // Act
-        final result = await apiClient.getExercises(page: 1, pageSize: 20);
+        final result = await apiClient.getExercises(limit: 20);
 
         // Assert
         expect(result.success, true);
-        expect(result.data, isA<PaginatedResponse<Exercise>>());
-        expect(result.data!.items.length, 1);
-        expect(result.data!.items[0].name, 'Scale Exercise');
-        verify(mockDio.get('/exercises', queryParameters: {
-          'page': 1,
-          'page_size': 20,
+        expect(result.data, isA<List<Exercise>>());
+        expect(result.data!.length, 1);
+        expect(result.data![0].title, 'Scale Exercise');
+        verify(mockDio.get('/v1/exercises', queryParameters: {
+          'limit': 20,
         })).called(1);
       });
     });
